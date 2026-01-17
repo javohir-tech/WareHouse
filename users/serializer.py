@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from .models import User
 from shared.utils import check_auth_type, send_email
-from .models import User, AuthType, AuthStatus
+from .models import User, AuthType, AuthStatus, UserConfirmation
 from rest_framework.validators import ValidationError
 from .tokens import RegistrationToken
+from django.utils import timezone
 
 
 class SingUpSerializer(serializers.ModelSerializer):
@@ -80,5 +81,25 @@ class SingUpSerializer(serializers.ModelSerializer):
 class CodeVerifySerializer(serializers.Serializer):
     code = serializers.CharField(max_length=4, write_only=True)
 
-    def validate(self, attrs):
-        return super().validate(attrs)
+    def validate(self, data):
+
+        user = self.context.get("user")
+        code = data.get("code")
+        if user is None:
+            raise ValidationError("user topilmadi")
+
+        user_confirmation_code = user.verify_codes.filter(
+            expiration_time__gte=timezone.now(), code=code, is_confirmed=False
+        ).first()
+
+        if user_confirmation_code is None:
+            raise ValidationError("Kod yaroqsiz")
+
+        data["code_verify"] = user_confirmation_code
+
+        return data
+
+    def save(self, **kwargs):
+        confirmation_code = self.validated_data["code_verify"]
+        confirmation_code.is_confirmed = True
+        confirmation_code.save()

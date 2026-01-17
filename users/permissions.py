@@ -12,7 +12,7 @@ class IsRegistrationPermissions(BasePermission):
         
         return token_type == "registration"
     
-class IsVeriryCodePermission(BasePermission):
+class IsVerifyCodePermission(BasePermission):
     
     def has_permission(self, request, view):
         
