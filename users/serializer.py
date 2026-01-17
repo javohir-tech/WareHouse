@@ -3,9 +3,10 @@ from .models import User
 from shared.utils import check_auth_type, send_email
 from .models import User, AuthType, AuthStatus
 from rest_framework.validators import ValidationError
+from .tokens import RegistrationToken
 
 
-class EmailSerializer(serializers.ModelSerializer):
+class SingUpSerializer(serializers.ModelSerializer):
     user_input = serializers.CharField(max_length=31, write_only=True)
 
     class Meta:
@@ -19,7 +20,7 @@ class EmailSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = User(**validated_data)
-
+        user.auth_status = AuthStatus.CODE_VERIFY
         user.save()
         auth_type = validated_data.get("auth_type")
 
@@ -70,9 +71,14 @@ class EmailSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        token = instance.token()
-        data["access_token"] = token.get("access_token")
-        data["refresh"] = token.get("refresh")
         data["auth_status"] = AuthStatus.CODE_VERIFY
+        data["registration_token"] = str(RegistrationToken.for_user(instance))
 
         return data
+
+
+class CodeVerifySerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=4, write_only=True)
+
+    def validate(self, attrs):
+        return super().validate(attrs)

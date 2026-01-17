@@ -18,7 +18,7 @@ class RegistrationToken(Token):
         token['auth_type'] = user.auth_type
         
         if user.auth_type == AuthType.VIA_EMAIL:
-            token['email'] == user.email
+            token['email'] = user.email
         elif user.auth_tyep == AuthType.VIA_PHONE:
             token["phone_number"] = user.phone_number
             

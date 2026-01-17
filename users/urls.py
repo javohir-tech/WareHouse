@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CreateEmailView
+from .views import SingUpView
 urlpatterns = [
-    path("singup/" , CreateEmailView.as_view())
+    path("singup/" , SingUpView.as_view())
 ]
