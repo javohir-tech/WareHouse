@@ -2,7 +2,7 @@ import re
 from rest_framework import serializers
 from .models import User
 from shared.utils import check_auth_type, send_email
-from .models import User, AuthType, AuthStatus, UserConfirmation
+from .models import User, AuthType, AuthStatus
 from rest_framework.validators import ValidationError
 from .tokens import RegistrationToken
 from django.utils import timezone
@@ -105,6 +105,7 @@ class CodeVerifySerializer(serializers.Serializer):
 
 
 class EditUserSerializer(serializers.Serializer):
+    
     first_name = serializers.CharField(write_only=True, required=True)
     last_name = serializers.CharField(write_only=True, required=True)
     username = serializers.CharField(write_only=True, required=True)
@@ -112,6 +113,7 @@ class EditUserSerializer(serializers.Serializer):
     confirm_password = serializers.CharField(write_only=True, required=True)
 
     def validate(self, data):
+        
         username = data.get("username")
         password = data.get("password")
         confirm_password = data.get("confirm_password")
@@ -124,6 +126,14 @@ class EditUserSerializer(serializers.Serializer):
                     "message": "Username belgilar va raqamlardan iborat bo;lishi kerak .Uzunligi 3 va 15 orasida bo'lishi kerak ",
                 }
             )
+            
+        temp_user = User.objects.filter(username = username)
+        
+        if temp_user.exists() :
+            raise ValidationError({
+                "success" : False,
+                "message" : "Bu username band"
+            })
 
         self.check_password(password)
 
@@ -157,6 +167,7 @@ class EditUserSerializer(serializers.Serializer):
 
 
 class UploadUserImageSerializer(serializers.Serializer):
+    
     image = serializers.ImageField(
         validators=[
             FileExtensionValidator(
@@ -166,11 +177,7 @@ class UploadUserImageSerializer(serializers.Serializer):
     )
 
     def update(self, instance, validated_data):
-
-        print("=" * 50)
-        print(validated_data)
-        print("=" * 50)
-
+        
         image = validated_data.get("image", instance.photo)
 
         if image:
@@ -178,3 +185,4 @@ class UploadUserImageSerializer(serializers.Serializer):
             instance.save()
 
         return instance
+ 
