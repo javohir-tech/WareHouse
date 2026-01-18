@@ -2,10 +2,14 @@ from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
-from .serializer import SingUpSerializer, CodeVerifySerializer
+from .serializer import SingUpSerializer, CodeVerifySerializer, EditUserSerializer
 from rest_framework.response import Response
 from .models import User, AuthStatus, AuthType
-from .permissions import IsRegistrationPermissions, IsVerifyCodePermission
+from .permissions import (
+    IsRegistrationPermissions,
+    IsVerifyCodePermission,
+    IsEditUserPermissions,
+)
 from .authentication import RegistrationTokenAuthentication
 from .tokens import RegistrationToken
 from rest_framework.exceptions import ValidationError
@@ -31,6 +35,7 @@ class CodeVerifyView(APIView):
         )
         if serializer.is_valid(raise_exception=True):
             user.auth_status = AuthStatus.DONE
+            user.save()
             return Response(
                 {
                     "success": True,
@@ -84,6 +89,29 @@ class CodeVerifyRestView(APIView):
                 {
                     "success": False,
                     "message": "siz hozirda yaroqli kod bor biroz kuting",
+                }
+            )
+
+
+class EditUserView(APIView):
+
+    permission_classes = [IsRegistrationPermissions, IsEditUserPermissions]
+    authentication_classes = [RegistrationTokenAuthentication]
+
+    def put(self, request, *args, **kwargs):
+        serializer = EditUserSerializer(instance=self.request.user, data=request.data)
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+
+            token = self.request.user.token()
+
+            return Response(
+                {
+                    "success": True,
+                    "message": "Muvafiqiyatli o'zgartrildi",
+                    "access_token": token.get("access_token"),
+                    "refresh": token.get("refresh"),
                 }
             )
 

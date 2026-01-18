@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 from .models import User
 from shared.utils import check_auth_type, send_email
@@ -5,6 +6,7 @@ from .models import User, AuthType, AuthStatus, UserConfirmation
 from rest_framework.validators import ValidationError
 from .tokens import RegistrationToken
 from django.utils import timezone
+from django.contrib.auth.password_validation import validate_password
 
 
 class SingUpSerializer(serializers.ModelSerializer):
@@ -99,3 +101,55 @@ class CodeVerifySerializer(serializers.Serializer):
         user_confirmation_code.save()
 
         return data
+
+
+class EditUserSerializer(serializers.Serializer):
+    first_name = serializers.CharField(write_only=True)
+    last_name = serializers.CharField(write_only=True)
+    username = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, data):
+        username = data.get("username")
+        password = data.get("password")
+        confirm_password = data.get("confirm_password")
+        username_regex = r"^[a-z0-9_-]{3,15}$"
+
+        if not re.fullmatch(username_regex, username):
+            raise ValidationError(
+                {
+                    "succeess": False,
+                    "message": "Username belgilar va raqamlardan iborat bo;lishi kerak .Uzunligi 3 va 15 orasida bo'lishi kerak ",
+                }
+            )
+
+        self.check_password(password)
+
+        if password != confirm_password:
+            raise ValidationError(
+                {"success": False, "message": "Tastiqlash paroli parololga teng emas"}
+            )
+
+        return data
+
+    @staticmethod
+    def check_password(password):
+        try:
+            validate_password(password)
+        except Exception as e:
+            raise ValidationError({"success": False, "message": f"Parol mos emas {e}"})
+
+    def update(self, instance, validated_data):
+        instance.username= validated_data.get("username")
+        instance.first_name = validated_data.get("first_name")
+        instance.last_name = validated_data.get("last_name")
+
+        if validated_data.get("password"):
+            instance.set_password(validated_data.get("password"))
+        if instance.auth_status == AuthStatus.DONE:
+            instance.auth_status = AuthStatus.PHOTO_DONE
+
+        instance.save()
+
+        return instance

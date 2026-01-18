@@ -22,3 +22,14 @@ class IsVerifyCodePermission(BasePermission):
         current_step = request.auth.get("auth_status")
         
         return current_step == AuthStatus.CODE_VERIFY
+    
+class IsEditUserPermissions(BasePermission) :
+    
+    def has_permission(self, request, view):
+        
+        if not hasattr(request , 'auth') or request.auth is None :
+            return False
+        
+        current_step = request.auth.get('auth_status')
+        
+        return current_step == AuthStatus.DONE
