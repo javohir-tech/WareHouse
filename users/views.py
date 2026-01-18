@@ -23,7 +23,7 @@ class CodeVerifyView(APIView):
 
     def post(self, request, *args, **kwargs):
         user = self.request.user
-        serializer = CodeVerifySerializer(data=request.data, context={"user": user})
+        serializer = CodeVerifySerializer(data=request.data, context={"user": self.request.user})
         if serializer.is_valid(raise_exception=True):
             user.auth_status = AuthStatus.DONE
             return Response(

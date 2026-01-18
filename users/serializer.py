@@ -95,11 +95,7 @@ class CodeVerifySerializer(serializers.Serializer):
         if user_confirmation_code is None:
             raise ValidationError("Kod yaroqsiz")
 
-        data["code_verify"] = user_confirmation_code
+        user_confirmation_code.is_confirmed = True
+        user_confirmation_code.save()
 
         return data
-
-    def save(self, **kwargs):
-        confirmation_code = self.validated_data["code_verify"]
-        confirmation_code.is_confirmed = True
-        confirmation_code.save()
