@@ -7,6 +7,7 @@ from rest_framework.validators import ValidationError
 from .tokens import RegistrationToken
 from django.utils import timezone
 from django.contrib.auth.password_validation import validate_password
+from django.core.validators import FileExtensionValidator
 
 
 class SingUpSerializer(serializers.ModelSerializer):
@@ -104,11 +105,11 @@ class CodeVerifySerializer(serializers.Serializer):
 
 
 class EditUserSerializer(serializers.Serializer):
-    first_name = serializers.CharField(write_only=True)
-    last_name = serializers.CharField(write_only=True)
-    username = serializers.CharField(write_only=True)
-    password = serializers.CharField(write_only=True)
-    confirm_password = serializers.CharField(write_only=True)
+    first_name = serializers.CharField(write_only=True, required=True)
+    last_name = serializers.CharField(write_only=True, required=True)
+    username = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(write_only=True, required=True)
+    confirm_password = serializers.CharField(write_only=True, required=True)
 
     def validate(self, data):
         username = data.get("username")
@@ -141,7 +142,7 @@ class EditUserSerializer(serializers.Serializer):
             raise ValidationError({"success": False, "message": f"Parol mos emas {e}"})
 
     def update(self, instance, validated_data):
-        instance.username= validated_data.get("username")
+        instance.username = validated_data.get("username")
         instance.first_name = validated_data.get("first_name")
         instance.last_name = validated_data.get("last_name")
 
@@ -151,5 +152,29 @@ class EditUserSerializer(serializers.Serializer):
             instance.auth_status = AuthStatus.PHOTO_DONE
 
         instance.save()
+
+        return instance
+
+
+class UploadUserImageSerializer(serializers.Serializer):
+    image = serializers.ImageField(
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=["jpg", "jpeg", "png", "heic", "hief"]
+            )
+        ]
+    )
+
+    def update(self, instance, validated_data):
+
+        print("=" * 50)
+        print(validated_data)
+        print("=" * 50)
+
+        image = validated_data.get("image", instance.photo)
+
+        if image:
+            instance.photo = image
+            instance.save()
 
         return instance

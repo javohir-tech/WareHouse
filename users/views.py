@@ -1,8 +1,13 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework import generics
-from rest_framework.permissions import AllowAny
-from .serializer import SingUpSerializer, CodeVerifySerializer, EditUserSerializer
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from .serializer import (
+    SingUpSerializer,
+    CodeVerifySerializer,
+    EditUserSerializer,
+    UploadUserImageSerializer,
+)
 from rest_framework.response import Response
 from .models import User, AuthStatus, AuthType
 from .permissions import (
@@ -113,6 +118,23 @@ class EditUserView(APIView):
                     "access_token": token.get("access_token"),
                     "refresh": token.get("refresh"),
                 }
+            )
+
+
+class UserImageUploadView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+
+        user = self.request.user
+
+        serializer = UploadUserImageSerializer(instance=user, data=request.data)
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(
+                {"success": True, "message": "Rasm muvvafaqiyatli o'rnatildi"}
             )
 
 

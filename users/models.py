@@ -38,6 +38,7 @@ class User(BaseModel, AbstractUser):
     )
     email = models.EmailField(max_length=254, unique=True, blank=True, null=True)
     phone_number = models.CharField(max_length=16, unique=True, blank=True, null=True)
+    photo = models.ImageField(upload_to="user_photo", blank=True, null=True)
 
     def code_verify(self, auth_type):
         code = "".join([str(random.randint(1, 10000) % 10) for _ in range(4)])
